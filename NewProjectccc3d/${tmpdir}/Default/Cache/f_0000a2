@@ -1,0 +1,241 @@
+(function (global, factory) {
+  if (typeof define === "function" && define.amd) {
+    define(["exports", "../data/class-decorator.js", "../data/instantiate-jit.js", "../utils/js.js", "../value-types/index.js", "./asset.js", "../default-constants.js"], factory);
+  } else if (typeof exports !== "undefined") {
+    factory(exports, require("../data/class-decorator.js"), require("../data/instantiate-jit.js"), require("../utils/js.js"), require("../value-types/index.js"), require("./asset.js"), require("../default-constants.js"));
+  } else {
+    var mod = {
+      exports: {}
+    };
+    factory(mod.exports, global.classDecorator, global.instantiateJit, global.js, global.index, global.asset, global.defaultConstants);
+    global.prefab = mod.exports;
+  }
+})(typeof globalThis !== "undefined" ? globalThis : typeof self !== "undefined" ? self : this, function (_exports, _classDecorator, _instantiateJit, _js, _index, _asset, _defaultConstants) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = void 0;
+
+  var _dec, _class, _class2, _descriptor, _descriptor2, _descriptor3, _class3, _temp;
+
+  function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+  function _initializerDefineProperty(target, property, descriptor, context) { if (!descriptor) return; Object.defineProperty(target, property, { enumerable: descriptor.enumerable, configurable: descriptor.configurable, writable: descriptor.writable, value: descriptor.initializer ? descriptor.initializer.call(context) : void 0 }); }
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+  function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+  function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+  function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+  function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+  function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+  function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+  function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) { var desc = {}; Object.keys(descriptor).forEach(function (key) { desc[key] = descriptor[key]; }); desc.enumerable = !!desc.enumerable; desc.configurable = !!desc.configurable; if ('value' in desc || desc.initializer) { desc.writable = true; } desc = decorators.slice().reverse().reduce(function (desc, decorator) { return decorator(target, property, desc) || desc; }, desc); if (context && desc.initializer !== void 0) { desc.value = desc.initializer ? desc.initializer.call(context) : void 0; desc.initializer = undefined; } if (desc.initializer === void 0) { Object.defineProperty(target, property, desc); desc = null; } return desc; }
+
+  function _initializerWarningHelper(descriptor, context) { throw new Error('Decorating class property failed. Please ensure that ' + 'proposal-class-properties is enabled and runs after the decorators transform.'); }
+
+  /**
+   * Prefab 创建实例所用的优化策略，配合 [[optimizationPolicy]] 使用。
+   *
+   * @enum Prefab.OptimizationPolicy
+   * @since 1.10.0
+   */
+  var OptimizationPolicy = (0, _index.Enum)({
+    /**
+     * 根据创建次数自动调整优化策略。初次创建实例时，行为等同 SINGLE_INSTANCE，多次创建后将自动采用 MULTI_INSTANCE。
+     * @property {Number} AUTO
+     */
+    AUTO: 0,
+
+    /**
+     * 优化单次创建性能。<br>
+     * 该选项会跳过针对这个 prefab 的代码生成优化操作。当该 prefab 加载后，一般只会创建一个实例时，请选择此项。
+     * @property {Number} SINGLE_INSTANCE
+     */
+    SINGLE_INSTANCE: 1,
+
+    /**
+     * 优化多次创建性能。<br>
+     * 该选项会启用针对这个 prefab 的代码生成优化操作。当该 prefab 加载后，一般会创建多个实例时，请选择此项。如果该 prefab 在场景中的节点启用了自动关联，并且在场景中有多份实例，也建议选择此项。
+     * @property {Number} MULTI_INSTANCE
+     */
+    MULTI_INSTANCE: 2
+  });
+  /**
+   * @en Class for prefab handling.
+   * @zh 预制资源类。
+   */
+
+  var Prefab = (_dec = (0, _classDecorator.ccclass)('cc.Prefab'), _dec(_class = (_class2 = (_temp = _class3 = /*#__PURE__*/function (_Asset) {
+    _inherits(Prefab, _Asset);
+
+    /**
+     * @property {Node} data - the main cc.Node in the prefab
+     */
+
+    /**
+     * @zh
+     * 设置实例化这个 prefab 时所用的优化策略。根据使用情况设置为合适的值，能优化该 prefab 实例化所用的时间。
+     * @en
+     * Indicates the optimization policy for instantiating this prefab.
+     * Set to a suitable value based on usage, can optimize the time it takes to instantiate this prefab.
+     *
+     * @property {Prefab.OptimizationPolicy} optimizationPolicy
+     * @default Prefab.OptimizationPolicy.AUTO
+     * @since 1.10.0
+     * @example
+     * ```typescript
+     * prefab.optimizationPolicy = cc.Prefab.OptimizationPolicy.MULTI_INSTANCE;
+     * ```
+     */
+
+    /**
+     * @en Indicates the raw assets of this prefab can be load after prefab loaded.
+     * @zh 指示该 Prefab 依赖的资源可否在 Prefab 加载后再延迟加载。
+     * @default false
+     */
+    function Prefab() {
+      var _this;
+
+      _classCallCheck(this, Prefab);
+
+      _this = _possibleConstructorReturn(this, _getPrototypeOf(Prefab).call(this));
+      /**
+       * Cache function to optimize instance creaton.
+       * @property {Function} _createFunction
+       * @private
+       */
+
+      _initializerDefineProperty(_this, "data", _descriptor, _assertThisInitialized(_this));
+
+      _initializerDefineProperty(_this, "optimizationPolicy", _descriptor2, _assertThisInitialized(_this));
+
+      _initializerDefineProperty(_this, "asyncLoadAssets", _descriptor3, _assertThisInitialized(_this));
+
+      _this._createFunction = void 0;
+      _this._instantiatedTimes = void 0;
+      _this._createFunction = null;
+      _this._instantiatedTimes = 0;
+      return _this;
+    }
+
+    _createClass(Prefab, [{
+      key: "createNode",
+      value: function createNode(cb) {
+        var node = cc.instantiate(this);
+        node.name = this.name;
+        cb(null, node);
+      }
+      /**
+       * @en
+       * Dynamically translation prefab data into minimized code.<br/>
+       * This method will be called automatically before the first time the prefab being instantiated,<br/>
+       * but you can re-call to refresh the create function once you modified the original prefab data in script.
+       * @zh
+       * 将预制数据动态转换为最小化代码。<br/>
+       * 此方法将在第一次实例化预制件之前自动调用，<br/>
+       * 但是您可以在脚本中修改原始预制数据后重新调用以刷新创建功能。
+       */
+
+    }, {
+      key: "compileCreateFunction",
+      value: function compileCreateFunction() {
+        this._createFunction = (0, _instantiateJit.compile)(this.data);
+      } // just instantiate, will not initialize the Node, this will be called during Node's initialization.
+      // @param {Node} [rootToRedirect] - specify an instantiated prefabRoot that all references to prefabRoot in prefab
+      //                                  will redirect to
+
+    }, {
+      key: "_doInstantiate",
+      value: function _doInstantiate(rootToRedirect) {
+        if (this.data._prefab) {
+          // prefab asset is always synced
+          this.data._prefab._synced = true;
+        } else {
+          // temp guard code
+          cc.warnID(3700);
+        }
+
+        if (!this._createFunction) {
+          this.compileCreateFunction();
+        }
+
+        return this._createFunction(rootToRedirect); // this.data._instantiate();
+      }
+    }, {
+      key: "_instantiate",
+      value: function _instantiate() {
+        var node;
+        var useJit = false;
+
+        if (_defaultConstants.SUPPORT_JIT) {
+          if (this.optimizationPolicy === OptimizationPolicy.SINGLE_INSTANCE) {
+            useJit = false;
+          } else if (this.optimizationPolicy === OptimizationPolicy.MULTI_INSTANCE) {
+            useJit = true;
+          } else {
+            // auto
+            useJit = this._instantiatedTimes + 1 >= Prefab.OptimizationPolicyThreshold;
+          }
+        }
+
+        if (useJit) {
+          // instantiate node
+          node = this._doInstantiate(); // initialize node
+
+          this.data._instantiate(node);
+        } else {
+          // prefab asset is always synced
+          this.data._prefab._synced = true; // instantiate node
+
+          node = this.data._instantiate();
+        }
+
+        ++this._instantiatedTimes;
+        return node;
+      }
+    }]);
+
+    return Prefab;
+  }(_asset.Asset), _class3.OptimizationPolicy = OptimizationPolicy, _class3.OptimizationPolicyThreshold = 3, _temp), (_descriptor = _applyDecoratedDescriptor(_class2.prototype, "data", [_classDecorator.property], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function initializer() {
+      return null;
+    }
+  }), _descriptor2 = _applyDecoratedDescriptor(_class2.prototype, "optimizationPolicy", [_classDecorator.property], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function initializer() {
+      return OptimizationPolicy.AUTO;
+    }
+  }), _descriptor3 = _applyDecoratedDescriptor(_class2.prototype, "asyncLoadAssets", [_classDecorator.property], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function initializer() {
+      return false;
+    }
+  })), _class2)) || _class);
+  _exports.default = Prefab;
+  cc.Prefab = Prefab;
+
+  if (_defaultConstants.ALIPAY || _defaultConstants.RUNTIME_BASED) {
+    cc._Prefab = Prefab;
+  } else {
+    (0, _js.obsolete)(cc, 'cc._Prefab', 'Prefab');
+  }
+});
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIkY6L2plbmtpbnMvd29ya3NwYWNlL0NyZWF0b3JfM0QvZWRpdG9yLTNkL3Jlc291cmNlcy8zZC9lbmdpbmUvY29jb3MvY29yZS9hc3NldHMvcHJlZmFiLnRzIl0sIm5hbWVzIjpbIk9wdGltaXphdGlvblBvbGljeSIsIkFVVE8iLCJTSU5HTEVfSU5TVEFOQ0UiLCJNVUxUSV9JTlNUQU5DRSIsIlByZWZhYiIsIl9jcmVhdGVGdW5jdGlvbiIsIl9pbnN0YW50aWF0ZWRUaW1lcyIsImNiIiwibm9kZSIsImNjIiwiaW5zdGFudGlhdGUiLCJuYW1lIiwiZGF0YSIsInJvb3RUb1JlZGlyZWN0IiwiX3ByZWZhYiIsIl9zeW5jZWQiLCJ3YXJuSUQiLCJjb21waWxlQ3JlYXRlRnVuY3Rpb24iLCJ1c2VKaXQiLCJTVVBQT1JUX0pJVCIsIm9wdGltaXphdGlvblBvbGljeSIsIk9wdGltaXphdGlvblBvbGljeVRocmVzaG9sZCIsIl9kb0luc3RhbnRpYXRlIiwiX2luc3RhbnRpYXRlIiwiQXNzZXQiLCJwcm9wZXJ0eSIsIkFMSVBBWSIsIlJVTlRJTUVfQkFTRUQiLCJfUHJlZmFiIl0sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBcUNBOzs7Ozs7QUFNQSxNQUFNQSxrQkFBa0IsR0FBRyxpQkFBSztBQUM1Qjs7OztBQUlBQyxJQUFBQSxJQUFJLEVBQUUsQ0FMc0I7O0FBTTVCOzs7OztBQUtBQyxJQUFBQSxlQUFlLEVBQUUsQ0FYVzs7QUFZNUI7Ozs7O0FBS0FDLElBQUFBLGNBQWMsRUFBRTtBQWpCWSxHQUFMLENBQTNCO0FBb0JBOzs7OztNQUtxQkMsTSxXQURwQiw2QkFBUSxXQUFSLEM7OztBQU1HOzs7O0FBTUE7Ozs7Ozs7Ozs7Ozs7Ozs7QUFrQkE7Ozs7O0FBVUEsc0JBQWU7QUFBQTs7QUFBQTs7QUFDWDtBQUNBOzs7Ozs7QUFGVzs7QUFBQTs7QUFBQTs7QUFBQSxZQUZQQyxlQUVPO0FBQUEsWUFEUEMsa0JBQ087QUFPWCxZQUFLRCxlQUFMLEdBQXVCLElBQXZCO0FBRUEsWUFBS0Msa0JBQUwsR0FBMEIsQ0FBMUI7QUFUVztBQVVkOzs7O2lDQUVrQkMsRSxFQUFvQjtBQUNuQyxZQUFNQyxJQUFJLEdBQUdDLEVBQUUsQ0FBQ0MsV0FBSCxDQUFlLElBQWYsQ0FBYjtBQUNBRixRQUFBQSxJQUFJLENBQUNHLElBQUwsR0FBWSxLQUFLQSxJQUFqQjtBQUNBSixRQUFBQSxFQUFFLENBQUMsSUFBRCxFQUFPQyxJQUFQLENBQUY7QUFDSDtBQUVEOzs7Ozs7Ozs7Ozs7OzhDQVVzQztBQUNsQyxhQUFLSCxlQUFMLEdBQXVCLDZCQUFRLEtBQUtPLElBQWIsQ0FBdkI7QUFDSCxPLENBRUQ7QUFDQTtBQUNBOzs7O3FDQUN3QkMsYyxFQUFzQjtBQUMxQyxZQUFJLEtBQUtELElBQUwsQ0FBVUUsT0FBZCxFQUF1QjtBQUNuQjtBQUNBLGVBQUtGLElBQUwsQ0FBVUUsT0FBVixDQUFrQkMsT0FBbEIsR0FBNEIsSUFBNUI7QUFDSCxTQUhELE1BSUs7QUFDRDtBQUNBTixVQUFBQSxFQUFFLENBQUNPLE1BQUgsQ0FBVSxJQUFWO0FBQ0g7O0FBQ0QsWUFBSSxDQUFDLEtBQUtYLGVBQVYsRUFBMkI7QUFDdkIsZUFBS1kscUJBQUw7QUFDSDs7QUFDRCxlQUFPLEtBQUtaLGVBQUwsQ0FBc0JRLGNBQXRCLENBQVAsQ0FaMEMsQ0FZSztBQUNsRDs7O3FDQUV1QjtBQUNwQixZQUFJTCxJQUFKO0FBQ0EsWUFBSVUsTUFBZSxHQUFHLEtBQXRCOztBQUNBLFlBQUlDLDZCQUFKLEVBQWlCO0FBQ2IsY0FBSSxLQUFLQyxrQkFBTCxLQUE0QnBCLGtCQUFrQixDQUFDRSxlQUFuRCxFQUFvRTtBQUNoRWdCLFlBQUFBLE1BQU0sR0FBRyxLQUFUO0FBQ0gsV0FGRCxNQUdLLElBQUksS0FBS0Usa0JBQUwsS0FBNEJwQixrQkFBa0IsQ0FBQ0csY0FBbkQsRUFBbUU7QUFDcEVlLFlBQUFBLE1BQU0sR0FBRyxJQUFUO0FBQ0gsV0FGSSxNQUdBO0FBQ0Q7QUFDQUEsWUFBQUEsTUFBTSxHQUFJLEtBQUtaLGtCQUFMLEdBQTBCLENBQTNCLElBQWlDRixNQUFNLENBQUNpQiwyQkFBakQ7QUFDSDtBQUNKOztBQUNELFlBQUlILE1BQUosRUFBWTtBQUNSO0FBQ0FWLFVBQUFBLElBQUksR0FBRyxLQUFLYyxjQUFMLEVBQVAsQ0FGUSxDQUdSOztBQUNBLGVBQUtWLElBQUwsQ0FBVVcsWUFBVixDQUF1QmYsSUFBdkI7QUFDSCxTQUxELE1BTUs7QUFDRDtBQUNBLGVBQUtJLElBQUwsQ0FBVUUsT0FBVixDQUFrQkMsT0FBbEIsR0FBNEIsSUFBNUIsQ0FGQyxDQUdEOztBQUNBUCxVQUFBQSxJQUFJLEdBQUcsS0FBS0ksSUFBTCxDQUFVVyxZQUFWLEVBQVA7QUFDSDs7QUFDRCxVQUFFLEtBQUtqQixrQkFBUDtBQUVBLGVBQU9FLElBQVA7QUFDSDs7OztJQXZIK0JnQixZLFdBRWxCeEIsa0IsR0FBcUJBLGtCLFVBRXJCcUIsMkIsR0FBOEIsQywrRUFJM0NJLHdCOzs7OzthQUNrQixJOzt5RkFpQmxCQSx3Qjs7Ozs7YUFDMkJ6QixrQkFBa0IsQ0FBQ0MsSTs7c0ZBTzlDd0Isd0I7Ozs7O2FBQ2lDLEs7Ozs7QUF1RnRDaEIsRUFBQUEsRUFBRSxDQUFDTCxNQUFILEdBQVlBLE1BQVo7O0FBQ0EsTUFBSXNCLDRCQUFVQywrQkFBZCxFQUE2QjtBQUN6QmxCLElBQUFBLEVBQUUsQ0FBQ21CLE9BQUgsR0FBYXhCLE1BQWI7QUFDSCxHQUZELE1BRU87QUFDSCxzQkFBU0ssRUFBVCxFQUFhLFlBQWIsRUFBMkIsUUFBM0I7QUFDSCIsInNvdXJjZXNDb250ZW50IjpbIi8qXHJcbiBDb3B5cmlnaHQgKGMpIDIwMTMtMjAxNiBDaHVrb25nIFRlY2hub2xvZ2llcyBJbmMuXHJcbiBDb3B5cmlnaHQgKGMpIDIwMTctMjAxOCBYaWFtZW4gWWFqaSBTb2Z0d2FyZSBDby4sIEx0ZC5cclxuXHJcbiBodHRwOi8vd3d3LmNvY29zLmNvbVxyXG5cclxuIFBlcm1pc3Npb24gaXMgaGVyZWJ5IGdyYW50ZWQsIGZyZWUgb2YgY2hhcmdlLCB0byBhbnkgcGVyc29uIG9idGFpbmluZyBhIGNvcHlcclxuIG9mIHRoaXMgc29mdHdhcmUgYW5kIGFzc29jaWF0ZWQgZW5naW5lIHNvdXJjZSBjb2RlICh0aGUgXCJTb2Z0d2FyZVwiKSwgYSBsaW1pdGVkLFxyXG4gIHdvcmxkd2lkZSwgcm95YWx0eS1mcmVlLCBub24tYXNzaWduYWJsZSwgcmV2b2NhYmxlIGFuZCBub24tZXhjbHVzaXZlIGxpY2Vuc2VcclxuIHRvIHVzZSBDb2NvcyBDcmVhdG9yIHNvbGVseSB0byBkZXZlbG9wIGdhbWVzIG9uIHlvdXIgdGFyZ2V0IHBsYXRmb3Jtcy4gWW91IHNoYWxsXHJcbiAgbm90IHVzZSBDb2NvcyBDcmVhdG9yIHNvZnR3YXJlIGZvciBkZXZlbG9waW5nIG90aGVyIHNvZnR3YXJlIG9yIHRvb2xzIHRoYXQnc1xyXG4gIHVzZWQgZm9yIGRldmVsb3BpbmcgZ2FtZXMuIFlvdSBhcmUgbm90IGdyYW50ZWQgdG8gcHVibGlzaCwgZGlzdHJpYnV0ZSxcclxuICBzdWJsaWNlbnNlLCBhbmQvb3Igc2VsbCBjb3BpZXMgb2YgQ29jb3MgQ3JlYXRvci5cclxuXHJcbiBUaGUgc29mdHdhcmUgb3IgdG9vbHMgaW4gdGhpcyBMaWNlbnNlIEFncmVlbWVudCBhcmUgbGljZW5zZWQsIG5vdCBzb2xkLlxyXG4gWGlhbWVuIFlhamkgU29mdHdhcmUgQ28uLCBMdGQuIHJlc2VydmVzIGFsbCByaWdodHMgbm90IGV4cHJlc3NseSBncmFudGVkIHRvIHlvdS5cclxuXHJcbiBUSEUgU09GVFdBUkUgSVMgUFJPVklERUQgXCJBUyBJU1wiLCBXSVRIT1VUIFdBUlJBTlRZIE9GIEFOWSBLSU5ELCBFWFBSRVNTIE9SXHJcbiBJTVBMSUVELCBJTkNMVURJTkcgQlVUIE5PVCBMSU1JVEVEIFRPIFRIRSBXQVJSQU5USUVTIE9GIE1FUkNIQU5UQUJJTElUWSxcclxuIEZJVE5FU1MgRk9SIEEgUEFSVElDVUxBUiBQVVJQT1NFIEFORCBOT05JTkZSSU5HRU1FTlQuIElOIE5PIEVWRU5UIFNIQUxMIFRIRVxyXG4gQVVUSE9SUyBPUiBDT1BZUklHSFQgSE9MREVSUyBCRSBMSUFCTEUgRk9SIEFOWSBDTEFJTSwgREFNQUdFUyBPUiBPVEhFUlxyXG4gTElBQklMSVRZLCBXSEVUSEVSIElOIEFOIEFDVElPTiBPRiBDT05UUkFDVCwgVE9SVCBPUiBPVEhFUldJU0UsIEFSSVNJTkcgRlJPTSxcclxuIE9VVCBPRiBPUiBJTiBDT05ORUNUSU9OIFdJVEggVEhFIFNPRlRXQVJFIE9SIFRIRSBVU0UgT1IgT1RIRVIgREVBTElOR1MgSU5cclxuIFRIRSBTT0ZUV0FSRS5cclxuKi9cclxuXHJcbi8qKlxyXG4gKiBAY2F0ZWdvcnkgYXNzZXRcclxuICovXHJcblxyXG5pbXBvcnQgeyBjY2NsYXNzLCBwcm9wZXJ0eSB9IGZyb20gJy4uL2RhdGEvY2xhc3MtZGVjb3JhdG9yJztcclxuaW1wb3J0IHsgY29tcGlsZSB9IGZyb20gJy4uL2RhdGEvaW5zdGFudGlhdGUtaml0JztcclxuaW1wb3J0IHsgb2Jzb2xldGUgfSBmcm9tICcuLi91dGlscy9qcyc7XHJcbmltcG9ydCB7IEVudW0gfSBmcm9tICcuLi92YWx1ZS10eXBlcyc7XHJcbmltcG9ydCB7IEFzc2V0IH0gZnJvbSAnLi9hc3NldCc7XHJcbmltcG9ydCB7IFNVUFBPUlRfSklULCBBTElQQVksIFJVTlRJTUVfQkFTRUQgfSBmcm9tICdpbnRlcm5hbDpjb25zdGFudHMnO1xyXG5cclxuLyoqXHJcbiAqIFByZWZhYiDliJvlu7rlrp7kvovmiYDnlKjnmoTkvJjljJbnrZbnlaXvvIzphY3lkIggW1tvcHRpbWl6YXRpb25Qb2xpY3ldXSDkvb/nlKjjgIJcclxuICpcclxuICogQGVudW0gUHJlZmFiLk9wdGltaXphdGlvblBvbGljeVxyXG4gKiBAc2luY2UgMS4xMC4wXHJcbiAqL1xyXG5jb25zdCBPcHRpbWl6YXRpb25Qb2xpY3kgPSBFbnVtKHtcclxuICAgIC8qKlxyXG4gICAgICog5qC55o2u5Yib5bu65qyh5pWw6Ieq5Yqo6LCD5pW05LyY5YyW562W55Wl44CC5Yid5qyh5Yib5bu65a6e5L6L5pe277yM6KGM5Li6562J5ZCMIFNJTkdMRV9JTlNUQU5DRe+8jOWkmuasoeWIm+W7uuWQjuWwhuiHquWKqOmHh+eUqCBNVUxUSV9JTlNUQU5DReOAglxyXG4gICAgICogQHByb3BlcnR5IHtOdW1iZXJ9IEFVVE9cclxuICAgICAqL1xyXG4gICAgQVVUTzogMCxcclxuICAgIC8qKlxyXG4gICAgICog5LyY5YyW5Y2V5qyh5Yib5bu65oCn6IO944CCPGJyPlxyXG4gICAgICog6K+l6YCJ6aG55Lya6Lez6L+H6ZKI5a+56L+Z5LiqIHByZWZhYiDnmoTku6PnoIHnlJ/miJDkvJjljJbmk43kvZzjgILlvZPor6UgcHJlZmFiIOWKoOi9veWQju+8jOS4gOiIrOWPquS8muWIm+W7uuS4gOS4quWunuS+i+aXtu+8jOivt+mAieaLqeatpOmhueOAglxyXG4gICAgICogQHByb3BlcnR5IHtOdW1iZXJ9IFNJTkdMRV9JTlNUQU5DRVxyXG4gICAgICovXHJcbiAgICBTSU5HTEVfSU5TVEFOQ0U6IDEsXHJcbiAgICAvKipcclxuICAgICAqIOS8mOWMluWkmuasoeWIm+W7uuaAp+iDveOAgjxicj5cclxuICAgICAqIOivpemAiemhueS8muWQr+eUqOmSiOWvuei/meS4qiBwcmVmYWIg55qE5Luj56CB55Sf5oiQ5LyY5YyW5pON5L2c44CC5b2T6K+lIHByZWZhYiDliqDovb3lkI7vvIzkuIDoiKzkvJrliJvlu7rlpJrkuKrlrp7kvovml7bvvIzor7fpgInmi6nmraTpobnjgILlpoLmnpzor6UgcHJlZmFiIOWcqOWcuuaZr+S4reeahOiKgueCueWQr+eUqOS6huiHquWKqOWFs+iBlO+8jOW5tuS4lOWcqOWcuuaZr+S4reacieWkmuS7veWunuS+i++8jOS5n+W7uuiurumAieaLqeatpOmhueOAglxyXG4gICAgICogQHByb3BlcnR5IHtOdW1iZXJ9IE1VTFRJX0lOU1RBTkNFXHJcbiAgICAgKi9cclxuICAgIE1VTFRJX0lOU1RBTkNFOiAyLFxyXG59KTtcclxuXHJcbi8qKlxyXG4gKiBAZW4gQ2xhc3MgZm9yIHByZWZhYiBoYW5kbGluZy5cclxuICogQHpoIOmihOWItui1hOa6kOexu+OAglxyXG4gKi9cclxuQGNjY2xhc3MoJ2NjLlByZWZhYicpXHJcbmV4cG9ydCBkZWZhdWx0IGNsYXNzIFByZWZhYiBleHRlbmRzIEFzc2V0IHtcclxuXHJcbiAgICBwdWJsaWMgc3RhdGljIE9wdGltaXphdGlvblBvbGljeSA9IE9wdGltaXphdGlvblBvbGljeTtcclxuXHJcbiAgICBwdWJsaWMgc3RhdGljIE9wdGltaXphdGlvblBvbGljeVRocmVzaG9sZCA9IDM7XHJcbiAgICAvKipcclxuICAgICAqIEBwcm9wZXJ0eSB7Tm9kZX0gZGF0YSAtIHRoZSBtYWluIGNjLk5vZGUgaW4gdGhlIHByZWZhYlxyXG4gICAgICovXHJcbiAgICBAcHJvcGVydHlcclxuICAgIHB1YmxpYyBkYXRhOiBhbnkgPSBudWxsO1xyXG5cclxuICAgIC8qKlxyXG4gICAgICogQHpoXHJcbiAgICAgKiDorr7nva7lrp7kvovljJbov5nkuKogcHJlZmFiIOaXtuaJgOeUqOeahOS8mOWMluetlueVpeOAguagueaNruS9v+eUqOaDheWGteiuvue9ruS4uuWQiOmAgueahOWAvO+8jOiDveS8mOWMluivpSBwcmVmYWIg5a6e5L6L5YyW5omA55So55qE5pe26Ze044CCXHJcbiAgICAgKiBAZW5cclxuICAgICAqIEluZGljYXRlcyB0aGUgb3B0aW1pemF0aW9uIHBvbGljeSBmb3IgaW5zdGFudGlhdGluZyB0aGlzIHByZWZhYi5cclxuICAgICAqIFNldCB0byBhIHN1aXRhYmxlIHZhbHVlIGJhc2VkIG9uIHVzYWdlLCBjYW4gb3B0aW1pemUgdGhlIHRpbWUgaXQgdGFrZXMgdG8gaW5zdGFudGlhdGUgdGhpcyBwcmVmYWIuXHJcbiAgICAgKlxyXG4gICAgICogQHByb3BlcnR5IHtQcmVmYWIuT3B0aW1pemF0aW9uUG9saWN5fSBvcHRpbWl6YXRpb25Qb2xpY3lcclxuICAgICAqIEBkZWZhdWx0IFByZWZhYi5PcHRpbWl6YXRpb25Qb2xpY3kuQVVUT1xyXG4gICAgICogQHNpbmNlIDEuMTAuMFxyXG4gICAgICogQGV4YW1wbGVcclxuICAgICAqIGBgYHR5cGVzY3JpcHRcclxuICAgICAqIHByZWZhYi5vcHRpbWl6YXRpb25Qb2xpY3kgPSBjYy5QcmVmYWIuT3B0aW1pemF0aW9uUG9saWN5Lk1VTFRJX0lOU1RBTkNFO1xyXG4gICAgICogYGBgXHJcbiAgICAgKi9cclxuICAgIEBwcm9wZXJ0eVxyXG4gICAgcHVibGljIG9wdGltaXphdGlvblBvbGljeSA9IE9wdGltaXphdGlvblBvbGljeS5BVVRPO1xyXG5cclxuICAgIC8qKlxyXG4gICAgICogQGVuIEluZGljYXRlcyB0aGUgcmF3IGFzc2V0cyBvZiB0aGlzIHByZWZhYiBjYW4gYmUgbG9hZCBhZnRlciBwcmVmYWIgbG9hZGVkLlxyXG4gICAgICogQHpoIOaMh+ekuuivpSBQcmVmYWIg5L6d6LWW55qE6LWE5rqQ5Y+v5ZCm5ZyoIFByZWZhYiDliqDovb3lkI7lho3lu7bov5/liqDovb3jgIJcclxuICAgICAqIEBkZWZhdWx0IGZhbHNlXHJcbiAgICAgKi9cclxuICAgIEBwcm9wZXJ0eVxyXG4gICAgcHVibGljIGFzeW5jTG9hZEFzc2V0czogQm9vbGVhbiA9IGZhbHNlO1xyXG5cclxuICAgIHByaXZhdGUgX2NyZWF0ZUZ1bmN0aW9uOiBGdW5jdGlvbiB8IG51bGw7XHJcbiAgICBwcml2YXRlIF9pbnN0YW50aWF0ZWRUaW1lczogbnVtYmVyO1xyXG4gICAgY29uc3RydWN0b3IgKCkge1xyXG4gICAgICAgIHN1cGVyKCk7XHJcbiAgICAgICAgLyoqXHJcbiAgICAgICAgICogQ2FjaGUgZnVuY3Rpb24gdG8gb3B0aW1pemUgaW5zdGFuY2UgY3JlYXRvbi5cclxuICAgICAgICAgKiBAcHJvcGVydHkge0Z1bmN0aW9ufSBfY3JlYXRlRnVuY3Rpb25cclxuICAgICAgICAgKiBAcHJpdmF0ZVxyXG4gICAgICAgICAqL1xyXG4gICAgICAgIHRoaXMuX2NyZWF0ZUZ1bmN0aW9uID0gbnVsbDtcclxuXHJcbiAgICAgICAgdGhpcy5faW5zdGFudGlhdGVkVGltZXMgPSAwO1xyXG4gICAgfVxyXG5cclxuICAgIHB1YmxpYyBjcmVhdGVOb2RlIChjYjogRnVuY3Rpb24pOiB2b2lkIHtcclxuICAgICAgICBjb25zdCBub2RlID0gY2MuaW5zdGFudGlhdGUodGhpcyk7XHJcbiAgICAgICAgbm9kZS5uYW1lID0gdGhpcy5uYW1lO1xyXG4gICAgICAgIGNiKG51bGwsIG5vZGUpO1xyXG4gICAgfVxyXG5cclxuICAgIC8qKlxyXG4gICAgICogQGVuXHJcbiAgICAgKiBEeW5hbWljYWxseSB0cmFuc2xhdGlvbiBwcmVmYWIgZGF0YSBpbnRvIG1pbmltaXplZCBjb2RlLjxici8+XHJcbiAgICAgKiBUaGlzIG1ldGhvZCB3aWxsIGJlIGNhbGxlZCBhdXRvbWF0aWNhbGx5IGJlZm9yZSB0aGUgZmlyc3QgdGltZSB0aGUgcHJlZmFiIGJlaW5nIGluc3RhbnRpYXRlZCw8YnIvPlxyXG4gICAgICogYnV0IHlvdSBjYW4gcmUtY2FsbCB0byByZWZyZXNoIHRoZSBjcmVhdGUgZnVuY3Rpb24gb25jZSB5b3UgbW9kaWZpZWQgdGhlIG9yaWdpbmFsIHByZWZhYiBkYXRhIGluIHNjcmlwdC5cclxuICAgICAqIEB6aFxyXG4gICAgICog5bCG6aKE5Yi25pWw5o2u5Yqo5oCB6L2s5o2i5Li65pyA5bCP5YyW5Luj56CB44CCPGJyLz5cclxuwqDCoMKgwqDCoCog5q2k5pa55rOV5bCG5Zyo56ys5LiA5qyh5a6e5L6L5YyW6aKE5Yi25Lu25LmL5YmN6Ieq5Yqo6LCD55So77yMPGJyLz5cclxuwqDCoMKgwqDCoCog5L2G5piv5oKo5Y+v5Lul5Zyo6ISa5pys5Lit5L+u5pS55Y6f5aeL6aKE5Yi25pWw5o2u5ZCO6YeN5paw6LCD55So5Lul5Yi35paw5Yib5bu65Yqf6IO944CCXHJcbiAgICAgKi9cclxuICAgIHB1YmxpYyBjb21waWxlQ3JlYXRlRnVuY3Rpb24gKCk6IHZvaWQge1xyXG4gICAgICAgIHRoaXMuX2NyZWF0ZUZ1bmN0aW9uID0gY29tcGlsZSh0aGlzLmRhdGEpO1xyXG4gICAgfVxyXG5cclxuICAgIC8vIGp1c3QgaW5zdGFudGlhdGUsIHdpbGwgbm90IGluaXRpYWxpemUgdGhlIE5vZGUsIHRoaXMgd2lsbCBiZSBjYWxsZWQgZHVyaW5nIE5vZGUncyBpbml0aWFsaXphdGlvbi5cclxuICAgIC8vIEBwYXJhbSB7Tm9kZX0gW3Jvb3RUb1JlZGlyZWN0XSAtIHNwZWNpZnkgYW4gaW5zdGFudGlhdGVkIHByZWZhYlJvb3QgdGhhdCBhbGwgcmVmZXJlbmNlcyB0byBwcmVmYWJSb290IGluIHByZWZhYlxyXG4gICAgLy8gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgd2lsbCByZWRpcmVjdCB0b1xyXG4gICAgcHJpdmF0ZSBfZG9JbnN0YW50aWF0ZSAocm9vdFRvUmVkaXJlY3Q/OiBhbnkpIHtcclxuICAgICAgICBpZiAodGhpcy5kYXRhLl9wcmVmYWIpIHtcclxuICAgICAgICAgICAgLy8gcHJlZmFiIGFzc2V0IGlzIGFsd2F5cyBzeW5jZWRcclxuICAgICAgICAgICAgdGhpcy5kYXRhLl9wcmVmYWIuX3N5bmNlZCA9IHRydWU7XHJcbiAgICAgICAgfVxyXG4gICAgICAgIGVsc2Uge1xyXG4gICAgICAgICAgICAvLyB0ZW1wIGd1YXJkIGNvZGVcclxuICAgICAgICAgICAgY2Mud2FybklEKDM3MDApO1xyXG4gICAgICAgIH1cclxuICAgICAgICBpZiAoIXRoaXMuX2NyZWF0ZUZ1bmN0aW9uKSB7XHJcbiAgICAgICAgICAgIHRoaXMuY29tcGlsZUNyZWF0ZUZ1bmN0aW9uKCk7XHJcbiAgICAgICAgfVxyXG4gICAgICAgIHJldHVybiB0aGlzLl9jcmVhdGVGdW5jdGlvbiEocm9vdFRvUmVkaXJlY3QpOyAgLy8gdGhpcy5kYXRhLl9pbnN0YW50aWF0ZSgpO1xyXG4gICAgfVxyXG5cclxuICAgIHByaXZhdGUgX2luc3RhbnRpYXRlICgpIHtcclxuICAgICAgICBsZXQgbm9kZTtcclxuICAgICAgICBsZXQgdXNlSml0OiBCb29sZWFuID0gZmFsc2U7XHJcbiAgICAgICAgaWYgKFNVUFBPUlRfSklUKSB7XHJcbiAgICAgICAgICAgIGlmICh0aGlzLm9wdGltaXphdGlvblBvbGljeSA9PT0gT3B0aW1pemF0aW9uUG9saWN5LlNJTkdMRV9JTlNUQU5DRSkge1xyXG4gICAgICAgICAgICAgICAgdXNlSml0ID0gZmFsc2U7XHJcbiAgICAgICAgICAgIH1cclxuICAgICAgICAgICAgZWxzZSBpZiAodGhpcy5vcHRpbWl6YXRpb25Qb2xpY3kgPT09IE9wdGltaXphdGlvblBvbGljeS5NVUxUSV9JTlNUQU5DRSkge1xyXG4gICAgICAgICAgICAgICAgdXNlSml0ID0gdHJ1ZTtcclxuICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICBlbHNlIHtcclxuICAgICAgICAgICAgICAgIC8vIGF1dG9cclxuICAgICAgICAgICAgICAgIHVzZUppdCA9ICh0aGlzLl9pbnN0YW50aWF0ZWRUaW1lcyArIDEpID49IFByZWZhYi5PcHRpbWl6YXRpb25Qb2xpY3lUaHJlc2hvbGQ7XHJcbiAgICAgICAgICAgIH1cclxuICAgICAgICB9XHJcbiAgICAgICAgaWYgKHVzZUppdCkge1xyXG4gICAgICAgICAgICAvLyBpbnN0YW50aWF0ZSBub2RlXHJcbiAgICAgICAgICAgIG5vZGUgPSB0aGlzLl9kb0luc3RhbnRpYXRlKCk7XHJcbiAgICAgICAgICAgIC8vIGluaXRpYWxpemUgbm9kZVxyXG4gICAgICAgICAgICB0aGlzLmRhdGEuX2luc3RhbnRpYXRlKG5vZGUpO1xyXG4gICAgICAgIH1cclxuICAgICAgICBlbHNlIHtcclxuICAgICAgICAgICAgLy8gcHJlZmFiIGFzc2V0IGlzIGFsd2F5cyBzeW5jZWRcclxuICAgICAgICAgICAgdGhpcy5kYXRhLl9wcmVmYWIuX3N5bmNlZCA9IHRydWU7XHJcbiAgICAgICAgICAgIC8vIGluc3RhbnRpYXRlIG5vZGVcclxuICAgICAgICAgICAgbm9kZSA9IHRoaXMuZGF0YS5faW5zdGFudGlhdGUoKTtcclxuICAgICAgICB9XHJcbiAgICAgICAgKyt0aGlzLl9pbnN0YW50aWF0ZWRUaW1lcztcclxuXHJcbiAgICAgICAgcmV0dXJuIG5vZGU7XHJcbiAgICB9XHJcbn1cclxuXHJcbmNjLlByZWZhYiA9IFByZWZhYjtcclxuaWYgKEFMSVBBWSB8fCBSVU5USU1FX0JBU0VEKSB7XHJcbiAgICBjYy5fUHJlZmFiID0gUHJlZmFiO1xyXG59IGVsc2Uge1xyXG4gICAgb2Jzb2xldGUoY2MsICdjYy5fUHJlZmFiJywgJ1ByZWZhYicpO1xyXG59XHJcbiJdfQ==

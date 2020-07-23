@@ -1,0 +1,187 @@
+(function (global, factory) {
+  if (typeof define === "function" && define.amd) {
+    define(["exports", "../math/index.js"], factory);
+  } else if (typeof exports !== "undefined") {
+    factory(exports, require("../math/index.js"));
+  } else {
+    var mod = {
+      exports: {}
+    };
+    factory(mod.exports, global.index);
+    global.distance = mod.exports;
+  }
+})(typeof globalThis !== "undefined" ? globalThis : typeof self !== "undefined" ? self : this, function (_exports, _index) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.point_plane = point_plane;
+  _exports.pt_point_plane = pt_point_plane;
+  _exports.pt_point_aabb = pt_point_aabb;
+  _exports.pt_point_obb = pt_point_obb;
+  _exports.pt_point_line = pt_point_line;
+
+  /**
+   * @category geometry
+   */
+  var X = new _index.Vec3();
+  var Y = new _index.Vec3();
+  var Z = new _index.Vec3();
+  var d = new _index.Vec3();
+  var min = new _index.Vec3();
+  var max = new _index.Vec3();
+  var u = new Array(3);
+  var e = new Array(3);
+  /**
+   * @en
+   * the distance between a point and a plane
+   * @zh
+   * 计算点和平面之间的距离。
+   * @param {Vec3} point 点。
+   * @param {plane} plane 平面。
+   * @return 距离。
+   */
+
+  function point_plane(point, plane_) {
+    return _index.Vec3.dot(plane_.n, point) - plane_.d;
+  }
+  /**
+   * @en
+   * the closest point on plane to a given point
+   * @zh
+   * 计算平面上最接近给定点的点。
+   * @param out 最近点。
+   * @param point 给定点。
+   * @param plane 平面。
+   * @return 最近点。
+   */
+
+
+  function pt_point_plane(out, point, plane_) {
+    var t = point_plane(point, plane_);
+    return _index.Vec3.subtract(out, point, _index.Vec3.multiplyScalar(out, plane_.n, t));
+  }
+  /**
+   * @en
+   * the closest point on aabb to a given point
+   * @zh
+   * 计算 aabb 上最接近给定点的点。
+   * @param {Vec3} out 最近点。
+   * @param {Vec3} point 给定点。
+   * @param {aabb} aabb 轴对齐包围盒。
+   * @return {Vec3} 最近点。
+   */
+
+
+  function pt_point_aabb(out, point, aabb_) {
+    _index.Vec3.copy(out, point);
+
+    _index.Vec3.subtract(min, aabb_.center, aabb_.halfExtents);
+
+    _index.Vec3.add(max, aabb_.center, aabb_.halfExtents);
+
+    out.x = out.x < min.x ? min.x : out.x;
+    out.y = out.y < min.x ? min.y : out.y;
+    out.z = out.z < min.x ? min.z : out.z;
+    out.x = out.x > max.x ? max.x : out.x;
+    out.y = out.y > max.x ? max.y : out.y;
+    out.z = out.z > max.x ? max.z : out.z;
+    return out;
+  }
+  /**
+   * @en
+   * the closest point on obb to a given point
+   * @zh
+   * 计算 obb 上最接近给定点的点。
+   * @param {Vec3} out 最近点。
+   * @param {Vec3} point 给定点。
+   * @param {obb} obb 方向包围盒。
+   * @return {Vec3} 最近点。
+   */
+
+
+  function pt_point_obb(out, point, obb_) {
+    _index.Vec3.set(X, obb_.orientation.m00, obb_.orientation.m01, obb_.orientation.m02);
+
+    _index.Vec3.set(Y, obb_.orientation.m03, obb_.orientation.m04, obb_.orientation.m05);
+
+    _index.Vec3.set(Z, obb_.orientation.m06, obb_.orientation.m07, obb_.orientation.m08);
+
+    u[0] = X;
+    u[1] = Y;
+    u[2] = Z;
+    e[0] = obb_.halfExtents.x;
+    e[1] = obb_.halfExtents.y;
+    e[2] = obb_.halfExtents.z;
+
+    _index.Vec3.subtract(d, point, obb_.center); // Start result at center of obb; make steps from there
+
+
+    _index.Vec3.set(out, obb_.center.x, obb_.center.y, obb_.center.z); // For each OBB axis...
+
+
+    for (var i = 0; i < 3; i++) {
+      // ...project d onto that axis to get the distance
+      // along the axis of d from the obb center
+      var dist = _index.Vec3.dot(d, u[i]); // if distance farther than the obb extents, clamp to the obb
+
+
+      if (dist > e[i]) {
+        dist = e[i];
+      }
+
+      if (dist < -e[i]) {
+        dist = -e[i];
+      } // Step that distance along the axis to get world coordinate
+
+
+      out.x += dist * u[i].x;
+      out.y += dist * u[i].y;
+      out.z += dist * u[i].z;
+    }
+
+    return out;
+  }
+  /**
+   * @en
+   * Calculate the nearest point on the line to the given point.
+   * @zh
+   * 计算给定点距离直线上最近的一点。
+   * @param out 最近点
+   * @param point 给定点
+   * @param linePointA 线上的某点 A
+   * @param linePointB 线上的某点 B
+   */
+
+
+  function pt_point_line(out, point, linePointA, linePointB) {
+    _index.Vec3.subtract(X, linePointA, linePointB);
+
+    var dir = X;
+
+    var dirSquaredLength = _index.Vec3.lengthSqr(dir);
+
+    if (dirSquaredLength == 0) {
+      // The point is at the segment start.
+      _index.Vec3.copy(out, linePointA);
+    } else {
+      // Calculate the projection of the point onto the line extending through the segment.
+      _index.Vec3.subtract(X, point, linePointA);
+
+      var t = _index.Vec3.dot(X, dir) / dirSquaredLength;
+
+      if (t < 0) {
+        // The point projects beyond the segment start.
+        _index.Vec3.copy(out, linePointA);
+      } else if (t > 1) {
+        // The point projects beyond the segment end.
+        _index.Vec3.copy(out, linePointB);
+      } else {
+        // The point projects between the start and end of the segment.
+        _index.Vec3.scaleAndAdd(out, linePointA, dir, t);
+      }
+    }
+  }
+});
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIkY6L2plbmtpbnMvd29ya3NwYWNlL0NyZWF0b3JfM0QvZWRpdG9yLTNkL3Jlc291cmNlcy8zZC9lbmdpbmUvY29jb3MvY29yZS9nZW9tZXRyeS9kaXN0YW5jZS50cyJdLCJuYW1lcyI6WyJYIiwiVmVjMyIsIlkiLCJaIiwiZCIsIm1pbiIsIm1heCIsInUiLCJBcnJheSIsImUiLCJwb2ludF9wbGFuZSIsInBvaW50IiwicGxhbmVfIiwiZG90IiwibiIsInB0X3BvaW50X3BsYW5lIiwib3V0IiwidCIsInN1YnRyYWN0IiwibXVsdGlwbHlTY2FsYXIiLCJwdF9wb2ludF9hYWJiIiwiYWFiYl8iLCJjb3B5IiwiY2VudGVyIiwiaGFsZkV4dGVudHMiLCJhZGQiLCJ4IiwieSIsInoiLCJwdF9wb2ludF9vYmIiLCJvYmJfIiwic2V0Iiwib3JpZW50YXRpb24iLCJtMDAiLCJtMDEiLCJtMDIiLCJtMDMiLCJtMDQiLCJtMDUiLCJtMDYiLCJtMDciLCJtMDgiLCJpIiwiZGlzdCIsInB0X3BvaW50X2xpbmUiLCJsaW5lUG9pbnRBIiwibGluZVBvaW50QiIsImRpciIsImRpclNxdWFyZWRMZW5ndGgiLCJsZW5ndGhTcXIiLCJzY2FsZUFuZEFkZCJdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBQUE7OztBQVFBLE1BQU1BLENBQUMsR0FBRyxJQUFJQyxXQUFKLEVBQVY7QUFDQSxNQUFNQyxDQUFDLEdBQUcsSUFBSUQsV0FBSixFQUFWO0FBQ0EsTUFBTUUsQ0FBQyxHQUFHLElBQUlGLFdBQUosRUFBVjtBQUNBLE1BQU1HLENBQUMsR0FBRyxJQUFJSCxXQUFKLEVBQVY7QUFDQSxNQUFNSSxHQUFHLEdBQUcsSUFBSUosV0FBSixFQUFaO0FBQ0EsTUFBTUssR0FBRyxHQUFHLElBQUlMLFdBQUosRUFBWjtBQUNBLE1BQU1NLENBQUMsR0FBRyxJQUFJQyxLQUFKLENBQVUsQ0FBVixDQUFWO0FBQ0EsTUFBTUMsQ0FBQyxHQUFHLElBQUlELEtBQUosQ0FBVSxD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QWlCVyxLQUFqQixFQUF3QmtDLFVBQXhCOztBQUNBLFVBQU01QixDQUFDLEdBQUdoQixZQUFLWSxHQUFMLENBQVNiLENBQVQsRUFBWStDLEdBQVosSUFBbUJDLGdCQUE3Qjs7QUFFQSxVQUFJL0IsQ0FBQyxHQUFHLENBQVIsRUFBVztBQUNQO0FBQ0FoQixvQkFBS3FCLElBQUwsQ0FBVU4sR0FBVixFQUFlNkIsVUFBZjtBQUNILE9BSEQsTUFHTyxJQUFJNUIsQ0FBQyxHQUFHLENBQVIsRUFBVztBQUNkO0FBQ0FoQixvQkFBS3FCLElBQUwsQ0FBVU4sR0FBVixFQUFlOEIsVUFBZjtBQUNILE9BSE0sTUFHQTtBQUNIO0FBQ0E3QyxvQkFBS2lELFdBQUwsQ0FBaUJsQyxHQUFqQixFQUFzQjZCLFVBQXRCLEVBQWtDRSxHQUFsQyxFQUF1QzlCLENBQXZDO0FBQ0g7QUFDSjtBQUNKIiwic291cmNlc0NvbnRlbnQiOlsiLyoqXHJcbiAqIEBjYXRlZ29yeSBnZW9tZXRyeVxyXG4gKi9cclxuXHJcbmltcG9ydCB7IFZlYzMgfSBmcm9tICcuLi9tYXRoJztcclxuaW1wb3J0IGFhYmIgZnJvbSAnLi9hYWJiJztcclxuaW1wb3J0IG9iYiBmcm9tICcuL29iYic7XHJcbmltcG9ydCBwbGFuZSBmcm9tICcuL3BsYW5lJztcclxuY29uc3QgWCA9IG5ldyBWZWMzKCk7XHJcbmNvbnN0IFkgPSBuZXcgVmVjMygpO1xyXG5jb25zdCBaID0gbmV3IFZlYzMoKTtcclxuY29uc3QgZCA9IG5ldyBWZWMzKCk7XHJcbmNvbnN0IG1pbiA9IG5ldyBWZWMzKCk7XHJcbmNvbnN0IG1heCA9IG5ldyBWZWMzKCk7XHJcbmNvbnN0IHUgPSBuZXcgQXJyYXkoMyk7XHJcbmNvbnN0IGUgPSBuZXcgQXJyYXkoMyk7XHJcblxyXG4vKipcclxuICogQGVuXHJcbiAqIHRoZSBkaXN0YW5jZSBiZXR3ZWVuIGEgcG9pbnQgYW5kIGEgcGxhbmVcclxuICogQHpoXHJcbiAqIOiuoeeul+eCueWSjOW5s+mdouS5i+mXtOeahOi3neemu+OAglxyXG4gKiBAcGFyYW0ge1ZlYzN9IHBvaW50IOeCueOAglxyXG4gKiBAcGFyYW0ge3BsYW5lfSBwbGFuZSDlubPpnaLjgIJcclxuICogQHJldHVybiDot53nprvjgIJcclxuICovXHJcbmV4cG9ydCBmdW5jdGlvbiBwb2ludF9wbGFuZSAocG9pbnQ6IFZlYzMsIHBsYW5lXzogcGxhbmUpIHtcclxuICAgIHJldHVybiBWZWMzLmRvdChwbGFuZV8ubiwgcG9pbnQpIC0gcGxhbmVfLmQ7XHJcbn1cclxuXHJcbi8qKlxyXG4gKiBAZW5cclxuICogdGhlIGNsb3Nlc3QgcG9pbnQgb24gcGxhbmUgdG8gYSBnaXZlbiBwb2ludFxyXG4gKiBAemhcclxuICog6K6h566X5bmz6Z2i5LiK5pyA5o6l6L+R57uZ5a6a54K555qE54K544CCXHJcbiAqIEBwYXJhbSBvdXQg5pyA6L+R54K544CCXHJcbiAqIEBwYXJhbSBwb2ludCDnu5nlrprngrnjgIJcclxuICogQHBhcmFtIHBsYW5lIOW5s+mdouOAglxyXG4gKiBAcmV0dXJuIOacgOi/keeCueOAglxyXG4gKi9cclxuZXhwb3J0IGZ1bmN0aW9uIHB0X3BvaW50X3BsYW5lIChvdXQ6IFZlYzMsIHBvaW50OiBWZWMzLCBwbGFuZV86IHBsYW5lKSB7XHJcbiAgICBjb25zdCB0ID0gcG9pbnRfcGxhbmUocG9pbnQsIHBsYW5lXyk7XHJcbiAgICByZXR1cm4gVmVjMy5zdWJ0cmFjdChvdXQsIHBvaW50LCBWZWMzLm11bHRpcGx5U2NhbGFyKG91dCwgcGxhbmVfLm4sIHQpKTtcclxufVxyXG5cclxuLyoqXHJcbiAqIEBlblxyXG4gKiB0aGUgY2xvc2VzdCBwb2ludCBvbiBhYWJiIHRvIGEgZ2l2ZW4gcG9pbnRcclxuICogQHpoXHJcbiAqIOiuoeeulyBhYWJiIOS4iuacgOaOpei/kee7meWumueCueeahOeCueOAglxyXG4gKiBAcGFyYW0ge1ZlYzN9IG91dCDmnIDov5HngrnjgIJcclxuICogQHBhcmFtIHtWZWMzfSBwb2ludCDnu5nlrprngrnjgIJcclxuICogQHBhcmFtIHthYWJifSBhYWJiIOi9tOWvuem9kOWMheWbtOebkuOAglxyXG4gKiBAcmV0dXJuIHtWZWMzfSDmnIDov5HngrnjgIJcclxuICovXHJcbmV4cG9ydCBmdW5jdGlvbiBwdF9wb2ludF9hYWJiIChvdXQ6IFZlYzMsIHBvaW50OiBWZWMzLCBhYWJiXzogYWFiYik6IFZlYzMge1xyXG4gICAgVmVjMy5jb3B5KG91dCwgcG9pbnQpO1xyXG4gICAgVmVjMy5zdWJ0cmFjdChtaW4sIGFhYmJfLmNlbnRlciwgYWFiYl8uaGFsZkV4dGVudHMpO1xyXG4gICAgVmVjMy5hZGQobWF4LCBhYWJiXy5jZW50ZXIsIGFhYmJfLmhhbGZFeHRlbnRzKTtcclxuXHJcbiAgICBvdXQueCA9IChvdXQueCA8IG1pbi54KSA/IG1pbi54IDogb3V0Lng7XHJcbiAgICBvdXQueSA9IChvdXQueSA8IG1pbi54KSA/IG1pbi55IDogb3V0Lnk7XHJcbiAgICBvdXQueiA9IChvdXQueiA8IG1pbi54KSA/IG1pbi56IDogb3V0Lno7XHJcblxyXG4gICAgb3V0LnggPSAob3V0LnggPiBtYXgueCkgPyBtYXgueCA6IG91dC54O1xyXG4gICAgb3V0LnkgPSAob3V0LnkgPiBtYXgueCkgPyBtYXgueSA6IG91dC55O1xyXG4gICAgb3V0LnogPSAob3V0LnogPiBtYXgueCkgPyBtYXgueiA6IG91dC56O1xyXG4gICAgcmV0dXJuIG91dDtcclxufVxyXG5cclxuLyoqXHJcbiAqIEBlblxyXG4gKiB0aGUgY2xvc2VzdCBwb2ludCBvbiBvYmIgdG8gYSBnaXZlbiBwb2ludFxyXG4gKiBAemhcclxuICog6K6h566XIG9iYiDkuIrmnIDmjqXov5Hnu5nlrprngrnnmoTngrnjgIJcclxuICogQHBhcmFtIHtWZWMzfSBvdXQg5pyA6L+R54K544CCXHJcbiAqIEBwYXJhbSB7VmVjM30gcG9pbnQg57uZ5a6a54K544CCXHJcbiAqIEBwYXJhbSB7b2JifSBvYmIg5pa55ZCR5YyF5Zu055uS44CCXHJcbiAqIEByZXR1cm4ge1ZlYzN9IOacgOi/keeCueOAglxyXG4gKi9cclxuZXhwb3J0IGZ1bmN0aW9uIHB0X3BvaW50X29iYiAob3V0OiBWZWMzLCBwb2ludDogVmVjMywgb2JiXzogb2JiKTogVmVjMyB7XHJcbiAgICBWZWMzLnNldChYLCBvYmJfLm9yaWVudGF0aW9uLm0wMCwgb2JiXy5vcmllbnRhdGlvbi5tMDEsIG9iYl8ub3JpZW50YXRpb24ubTAyKTtcclxuICAgIFZlYzMuc2V0KFksIG9iYl8ub3JpZW50YXRpb24ubTAzLCBvYmJfLm9yaWVudGF0aW9uLm0wNCwgb2JiXy5vcmllbnRhdGlvbi5tMDUpO1xyXG4gICAgVmVjMy5zZXQoWiwgb2JiXy5vcmllbnRhdGlvbi5tMDYsIG9iYl8ub3JpZW50YXRpb24ubTA3LCBvYmJfLm9yaWVudGF0aW9uLm0wOCk7XHJcblxyXG4gICAgdVswXSA9IFg7XHJcbiAgICB1WzFdID0gWTtcclxuICAgIHVbMl0gPSBaO1xyXG4gICAgZVswXSA9IG9iYl8uaGFsZkV4dGVudHMueDtcclxuICAgIGVbMV0gPSBvYmJfLmhhbGZFeHRlbnRzLnk7XHJcbiAgICBlWzJdID0gb2JiXy5oYWxmRXh0ZW50cy56O1xyXG5cclxuICAgIFZlYzMuc3VidHJhY3QoZCwgcG9pbnQsIG9iYl8uY2VudGVyKTtcclxuXHJcbiAgICAvLyBTdGFydCByZXN1bHQgYXQgY2VudGVyIG9mIG9iYjsgbWFrZSBzdGVwcyBmcm9tIHRoZXJlXHJcbiAgICBWZWMzLnNldChvdXQsIG9iYl8uY2VudGVyLngsIG9iYl8uY2VudGVyLnksIG9iYl8uY2VudGVyLnopO1xyXG5cclxuICAgIC8vIEZvciBlYWNoIE9CQiBheGlzLi4uXHJcbiAgICBmb3IgKGxldCBpID0gMDsgaSA8IDM7IGkrKykge1xyXG5cclxuICAgICAgICAvLyAuLi5wcm9qZWN0IGQgb250byB0aGF0IGF4aXMgdG8gZ2V0IHRoZSBkaXN0YW5jZVxyXG4gICAgICAgIC8vIGFsb25nIHRoZSBheGlzIG9mIGQgZnJvbSB0aGUgb2JiIGNlbnRlclxyXG4gICAgICAgIGxldCBkaXN0ID0gVmVjMy5kb3QoZCwgdVtpXSk7XHJcblxyXG4gICAgICAgIC8vIGlmIGRpc3RhbmNlIGZhcnRoZXIgdGhhbiB0aGUgb2JiIGV4dGVudHMsIGNsYW1wIHRvIHRoZSBvYmJcclxuICAgICAgICBpZiAoZGlzdCA+IGVbaV0pIHtcclxuICAgICAgICAgICAgZGlzdCA9IGVbaV07XHJcbiAgICAgICAgfVxyXG4gICAgICAgIGlmIChkaXN0IDwgLWVbaV0pIHtcclxuICAgICAgICAgICAgZGlzdCA9IC1lW2ldO1xyXG4gICAgICAgIH1cclxuXHJcbiAgICAgICAgLy8gU3RlcCB0aGF0IGRpc3RhbmNlIGFsb25nIHRoZSBheGlzIHRvIGdldCB3b3JsZCBjb29yZGluYXRlXHJcbiAgICAgICAgb3V0LnggKz0gZGlzdCAqIHVbaV0ueDtcclxuICAgICAgICBvdXQueSArPSBkaXN0ICogdVtpXS55O1xyXG4gICAgICAgIG91dC56ICs9IGRpc3QgKiB1W2ldLno7XHJcbiAgICB9XHJcbiAgICByZXR1cm4gb3V0O1xyXG59XHJcblxyXG4vKipcclxuICogQGVuXHJcbiAqIENhbGN1bGF0ZSB0aGUgbmVhcmVzdCBwb2ludCBvbiB0aGUgbGluZSB0byB0aGUgZ2l2ZW4gcG9pbnQuXHJcbiAqIEB6aFxyXG4gKiDorqHnrpfnu5nlrprngrnot53nprvnm7Tnur/kuIrmnIDov5HnmoTkuIDngrnjgIJcclxuICogQHBhcmFtIG91dCDmnIDov5HngrlcclxuICogQHBhcmFtIHBvaW50IOe7meWumueCuVxyXG4gKiBAcGFyYW0gbGluZVBvaW50QSDnur/kuIrnmoTmn5DngrkgQVxyXG4gKiBAcGFyYW0gbGluZVBvaW50QiDnur/kuIrnmoTmn5DngrkgQlxyXG4gKi9cclxuZXhwb3J0IGZ1bmN0aW9uIHB0X3BvaW50X2xpbmUgKG91dDogVmVjMywgcG9pbnQ6IFZlYzMsIGxpbmVQb2ludEE6IFZlYzMsIGxpbmVQb2ludEI6IFZlYzMpIHtcclxuICAgIFZlYzMuc3VidHJhY3QoWCwgbGluZVBvaW50QSwgbGluZVBvaW50Qik7XHJcbiAgICBjb25zdCBkaXIgPSBYO1xyXG4gICAgY29uc3QgZGlyU3F1YXJlZExlbmd0aCA9IFZlYzMubGVuZ3RoU3FyKGRpcik7XHJcblxyXG4gICAgaWYgKGRpclNxdWFyZWRMZW5ndGggPT0gMCkge1xyXG4gICAgICAgIC8vIFRoZSBwb2ludCBpcyBhdCB0aGUgc2VnbWVudCBzdGFydC5cclxuICAgICAgICBWZWMzLmNvcHkob3V0LCBsaW5lUG9pbnRBKTtcclxuICAgIH0gZWxzZSB7XHJcbiAgICAgICAgLy8gQ2FsY3VsYXRlIHRoZSBwcm9qZWN0aW9uIG9mIHRoZSBwb2ludCBvbnRvIHRoZSBsaW5lIGV4dGVuZGluZyB0aHJvdWdoIHRoZSBzZWdtZW50LlxyXG4gICAgICAgIFZlYzMuc3VidHJhY3QoWCwgcG9pbnQsIGxpbmVQb2ludEEpO1xyXG4gICAgICAgIGNvbnN0IHQgPSBWZWMzLmRvdChYLCBkaXIpIC8gZGlyU3F1YXJlZExlbmd0aDtcclxuXHJcbiAgICAgICAgaWYgKHQgPCAwKSB7XHJcbiAgICAgICAgICAgIC8vIFRoZSBwb2ludCBwcm9qZWN0cyBiZXlvbmQgdGhlIHNlZ21lbnQgc3RhcnQuXHJcbiAgICAgICAgICAgIFZlYzMuY29weShvdXQsIGxpbmVQb2ludEEpO1xyXG4gICAgICAgIH0gZWxzZSBpZiAodCA+IDEpIHtcclxuICAgICAgICAgICAgLy8gVGhlIHBvaW50IHByb2plY3RzIGJleW9uZCB0aGUgc2VnbWVudCBlbmQuXHJcbiAgICAgICAgICAgIFZlYzMuY29weShvdXQsIGxpbmVQb2ludEIpO1xyXG4gICAgICAgIH0gZWxzZSB7XHJcbiAgICAgICAgICAgIC8vIFRoZSBwb2ludCBwcm9qZWN0cyBiZXR3ZWVuIHRoZSBzdGFydCBhbmQgZW5kIG9mIHRoZSBzZWdtZW50LlxyXG4gICAgICAgICAgICBWZWMzLnNjYWxlQW5kQWRkKG91dCwgbGluZVBvaW50QSwgZGlyLCB0KTtcclxuICAgICAgICB9XHJcbiAgICB9XHJcbn1cclxuIl19
